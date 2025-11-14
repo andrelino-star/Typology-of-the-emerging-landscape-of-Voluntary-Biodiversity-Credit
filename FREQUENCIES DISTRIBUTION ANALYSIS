@@ -1,0 +1,40 @@
+R-SCRIPT FOR FREQUENCIES DISTRIBUTION ANALYSIS
+Author: André Luiz Ramos Lino
+1. LOADING NECESSARY PACKAGES
+install. packages (c ("readxl", "dplyr", "ggplot2", "tidyr"))
+library(readxl)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+2. Data Loading and Preparation
+dados_raw <- read_excel("tabela.xlsx")
+dados <- as.data.frame(dados_raw)
+rownames(dados) <- dados[[1]]
+dados <- dados[,-1]
+ordem_original_variaveis <- colnames(dados)
+3. Preparing the Data for the Chart
+dados_long <- Data %>%
+  pivot_longer(
+    cols = everything(),
+    names_to = "Variable",
+    values_to = "Value"
+  )
+dados_long$Variavel <- factor(dados_long$Variavel, levels = ordem_original_variaveis)
+4. Generating the Frequency Graph in the Correct Order
+grafico_frequencias_todas <- ggplot(dados_long, aes(x = as.factor(Valor))) +
+  geom_bar(fill = "#0073C2FF", alpha = 0.8) +
+  # O facet_wrap agora respeitará a ordem do fator 'Variavel'
+  facet_wrap(~ Variavel, scales = "free") +
+  labs(
+    title = "Frequency Distribution for All Variables"
+    x = "Value / Score Assigned",
+    y = "Frequency"
+  ) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 7),
+    strip.text = element_text(face = "bold"),
+    plot.title = element_text(hjust = 0.5, face="bold"),
+    plot.subtitle = element_text(hjust = 0.5)
+  )
+print(grafico_frequencias_todas)
