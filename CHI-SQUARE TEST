@@ -1,0 +1,74 @@
+R-SCRIPT FOR CHI-SQUARE TEST
+Author: André Luiz Ramos Lino
+1. LOADING NECESSARY PACKAGES
+install. packages (c ("readxl", "dplyr", "cluster", "ggplot2", "tibble", “ggraph”, “igraph”))
+library(readxl)
+library(dplyr)
+library(tidyr)
+library(cluster)
+library(tibble)
+library(ggplot2)
+library(ggraph)
+library(igraph)
+2. DEFINING PARAMETERS AND FILE NAMES               
+Input Parameters
+data_raw <- read_excel("table_data.xlsx")
+data <- as.data.frame(data_raw)
+rownames(data) <- data[[1]]
+data <- data[,-1]
+3. Chi-Square Association Analysis
+variable_names <- colnames(data)
+num_variables <- length(variable_names)
+chi_results <- data.frame(
+Variable_1 = character(),
+Variable_2 = character(),
+Chi_Square_Statistic = numeric(),
+p_value = numeric(),
+stringsAsFactors = FALSE
+)
+for (i in 1:(num_variables - 1)) {
+for (j in (i + 1):num_variables) {
+var1_name <- variable_names[i]
+var2_name <- variable_names[j]
+temp_table <- table(data[[var1_name]], data[[var2_name]])
+temp_test <- suppressWarnings(chisq.test(temp_table))
+chi_results <- rbind(chi_results, data.frame(
+Variable_1 = var1_name,
+Variable_2 = var2_name,
+Chi_Square_Statistic = temp_test$statistic,
+p_value = temp_test$p.value
+))
+}}
+dados_rede <- resultados_qui %>%
+  filter(p_valor < 0.05) %>%
+  mutate(forca = -log10(p_valor))
+rede <- graph_from_data_frame(d = dados_rede, directed = FALSE)
+grau_nos <- degree(rede, mode = "all"
+V(rede)$grau <- grau_nos
+rede_plot <- ggraph(rede, layout = 'stress') +
+   geom_edge_arc(
+    aes(width = forca, color = forca), 
+    strength = 0.15,
+    alpha = 0.6
+  ) +
+  scale_edge_width(
+    range = c(0.5, 1.5),
+    name = "Força (-log10(p))"
+  ) +
+  
+  scale_edge_color_distiller(palette = "RdYlBu", direction = -1) +
+    geom_node_point(aes(size = grau), color = "#4682B4", alpha = 0.9) +
+  scale_size_continuous(range = c(4, 12), name = "No. of Connections") +
+    geom_node_text(aes(label = name), repel = TRUE, point.padding = unit(0.3, "lines"), size = 3.5) +
+    guides(
+    edge_width = "none",
+    color = guide_colorbar(
+      title = "Força",
+      title.position = "top",
+      barwidth = unit(1, "cm"),
+      barheight = unit(5, "cm")
+    )
+  ) +
+  theme_graph(base_family = 'sans') +
+  labs(title = "Association Network between Variables (p < 0.05)")
+print(rede_plot)
