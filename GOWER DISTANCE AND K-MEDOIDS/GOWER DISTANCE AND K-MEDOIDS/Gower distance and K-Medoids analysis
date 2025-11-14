@@ -1,0 +1,108 @@
+R SCRIPT FOR GOWER DISTANCE AND K-MEDOIDS/PAM ANALYSIS
+Author: André Luiz Ramos Lino
+1. LOADING NECESSARY PACKAGES
+install. packages (c ("readxl", "dplyr", "cluster", "ggplot2", "ggrepel", “ggplotify”, “pheatmap”))
+library(readxl)
+library(dplyr)
+library(tidyr)
+library(cluster)
+library(pheatmap”)
+library(ggplot2)
+library(ggplotify)
+library(ggrepel)
+2. Loading and Diagnostics of the Dataframe 'Data'
+data_raw <- read_excel("data.xlsx")
+data <- as.data.frame(data_raw)
+rownames(data) <- data[[1]]
+data <- date[,-1]
+# INSPECT THE DATA STRUCTURE
+str(data)
+# INSPECT THE DATA SUMMARY
+summary(data)
+# Step 2: Distance matrix
+# Gower distance
+distance_gower_orgs <- daisy(dados, metric = "gower")
+# Heatmap Gowers distance
+print("Gower Distance Matrix Between Variables:")
+print(round(variable_distance_matrix, 2))
+print("Generating the heatmap...")
+p <- pheatmap(
+variable_distance_matrix,
+main = "Heatmap of Gower Distance Between Variables",
+clustering_distance_rows = gower_distance_variables, 
+clustering_distance_cols = gower_distance_variables,
+color = colorRampPalette(rev(c("#D73027", "#FC8D59", "#FEE090", "#FFFFBF", "#E0F3F8", "#91BFDB", "#4575B4")))(100), # Color palette (red-blue)
+border_color = "white",
+display_numbers = TRUE, 
+number_format = "%.2f" 
+)
+
+3. Cluster Number and PAM Algorithm Diagnostics
+k_great <- 5
+# Executar o algoritmo PAM
+pam_resultado <- pam(distancia_gower_orgs, k = k_great)
+str(pam_results)
+print(pam_results)
+4. Calculate Coordinates and Prepare Data
+# Calculate the coordinates for the graph using MDS
+coordinates_mds <- cmdscale(distance_gower_orgs)
+# Create the dataframe for the plot
+plot_data <- data.frame(
+  X = coordinates_mds[, 1],
+  Y = coordinates_mds[, 2],
+  Cluster = as.factor(pam_results$clustering),
+  Organization = rownames(data)
+)
+5. Calculate the Convex Hull Vertices for Each Cluster
+hull_data <- plot_data %>%
+  group_by(Cluster) %>%
+  slice(chull(X, Y))
+print("Points that form the edge of each cluster:")
+print(hull_data)
+6. Create the Chart with the Boundary Polygons (Fixed)
+grafico_com_limites <- ggplot(plot_data, aes(x = X, y = Y, color = Cluster)) +
+  geom_polygon(data = hull_data, aes(fill = Cluster), alpha = 0.2, show.legend = FALSE) +
+  geom_point(size = 4, alpha = 0.8) +
+   geom_text_repel(
+    aes(label = Organizacao), 
+    size = 3, 
+    show.legend = FALSE,
+    max.overlaps = 30 
+  ) +
+   labs(
+    title = "Cluster visualization (K-Medoids/PAM)",
+    subtitle = "Multidimensional Scaling (MDS) based visualization with Convex Hull for each group",
+    x = "MDS Coordinate 1",
+    y = "MDS Coordinate 2",
+    color = "Cluster" 
+  ) +
+  theme_bw() +
+  scale_color_brewer(palette = "Set1") +
+  scale_fill_brewer(palette = "Set1") # Garante que o preenchimento do polígono tenha a mesma cor
+# Print Final graphic
+print(graphic_with_bounds)
+7. GENERATE FACETED BOXPLOT
+cluster_list  <- sort(unique(data_with_clusters$Cluster))
+filter(Cluster == current_cluster)
+variables_to_plot  %
+pivot_longer(
+cols = all_of(variables_to_plot),
+names_to = "Variable",
+values_to = "Value")
+long_data$Variable <- factor(long_data$Variable, levels = variables_to_plot)
+individual_profile_plot <- ggplot(long_data, aes(x = Variable, y = Value, fill = Variable)) +
+geom_boxplot(show.legend = FALSE, na.rm = TRUE) +
+geom_jitter(width = 0.1, alpha = 0.4, height = 0, na.rm = TRUE) +
+labs(
+title = paste("Profile of Variables for the Cluster", current_cluster), # Dynamic title
+subtitle = paste("Based on", nrow(filtered_data), "Organizations"), # Dynamic subtitle
+x = "Methodological Variable",
+y = "Assigned Value"
+) +
+theme_minimal(base_size = 11) +
+theme(
+axis.text.x = element_text(angle = 60, hjust = 1, size = 9),
+plot.title = element_text(hjust = 0.5, face = "bold"),
+plot.subtitle = element_text(hjust = 0.5)
+)
+print(individual_profile_plot)
